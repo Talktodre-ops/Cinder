@@ -4,7 +4,18 @@ import { BackgroundLoadError } from "../wallpaper";
 import type { ExportProgress } from "./types";
 import { VideoExporter } from "./videoExporter";
 
-describe("VideoExporter (real browser)", () => {
+// MP4 export goes through ffmpeg in the Electron main process via
+// window.electronAPI.videoEncoderStart. Plain Chromium (which is what
+// vitest+playwright runs as) has no electronAPI, so these tests would
+// always fail with "ffmpeg subprocess unavailable in browser". Skip
+// when not running inside Electron — the suite still exists so it can
+// run unchanged if someone wires up an Electron-based test harness.
+const hasElectronEncoder =
+	typeof window !== "undefined" &&
+	typeof (window as { electronAPI?: { videoEncoderStart?: unknown } }).electronAPI
+		?.videoEncoderStart === "function";
+
+describe.skipIf(!hasElectronEncoder)("VideoExporter (real browser)", () => {
 	it("exports a valid MP4 blob from a real video", async () => {
 		const progressEvents: ExportProgress[] = [];
 

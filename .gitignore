@@ -43,3 +43,4 @@ __screenshots__/
 result
 result-*
 .direnv/
+release-artifacts/

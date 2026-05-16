@@ -29,7 +29,7 @@ the rendering on a pool of OffscreenCanvas workers in parallel.
 <p align="center">
   <img src="docs/screenshots/export-before.png" alt="Before: 6 fps export" width="48%" />
   &nbsp;&nbsp;
-  <img src="docs/screenshots/export-after.png"  alt="After: 25 fps with NVENC" width="48%" />
+  <img src="docs/screenshots/export-after.png"  alt="After: 30 fps with NVENC + worker pool" width="48%" />
 </p>
 
 The right-hand image is the export dialog showing the **NVENC** badge and the worker
