@@ -19,10 +19,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           
@@ -229,12 +229,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      # uiohook-napi compiles native X11/XTest bindings from source on Linux.
+      # Without these headers, node-gyp fails at src/x11/input_helper.c.
+      - name: Install X11 build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev libxtst-dev libxt-dev \
+            libxinerama-dev libxkbcommon-dev libxkbfile-dev
 
       - name: Install dependencies
         run: npm ci
