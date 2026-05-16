@@ -332,7 +332,9 @@ const cursorTelemetryBuffer = createCursorTelemetryBuffer({
 	maxActiveSamples: MAX_CURSOR_SAMPLES,
 });
 
-// Mouse click timestamps (macOS only — uiohook-napi behind Accessibility).
+// Mouse click timestamps. uiohook-napi is cross-platform (Win/Linux/macOS).
+// On macOS the user must grant Accessibility permission for this to work; on
+// Windows/Linux it just works once the native module loads.
 const MAX_CURSOR_CLICKS = 60 * 60 * 60; // ~1 click/sec for an hour
 let cursorClickTimestampsMs: number[] = [];
 let uioHookInstance: {
@@ -368,23 +370,26 @@ function loadUioHookForClicks(): typeof uioHookInstance {
 }
 
 function startClickCapture() {
-	if (process.platform !== "darwin") return;
 	if (uioHookInstance) return;
 
-	// Passive check — the prompt fires from the renderer when the user toggles
-	// "Only on clicks" so it doesn't stack with the screen-recording prompt.
-	try {
-		if (!systemPreferences.isTrustedAccessibilityClient(false)) {
-			if (!uioHookFailureLogged) {
-				uioHookFailureLogged = true;
-				console.warn(
-					"[clickCapture] Accessibility permission not granted — click capture disabled.",
-				);
+	// macOS requires Accessibility permission for uiohook to receive global
+	// events. The renderer prompts the user when they toggle "Only on clicks"
+	// so the prompt doesn't stack with the screen-recording prompt. Windows
+	// and Linux don't need this — uiohook starts immediately on those.
+	if (process.platform === "darwin") {
+		try {
+			if (!systemPreferences.isTrustedAccessibilityClient(false)) {
+				if (!uioHookFailureLogged) {
+					uioHookFailureLogged = true;
+					console.warn(
+						"[clickCapture] Accessibility permission not granted — click capture disabled.",
+					);
+				}
+				return;
 			}
-			return;
+		} catch {
+			// fall through; uiohook will fail defensively below
 		}
-	} catch {
-		// fall through; uiohook will fail defensively below
 	}
 
 	const hook = loadUioHookForClicks();

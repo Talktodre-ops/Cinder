@@ -156,12 +156,6 @@ export default function VideoEditor() {
 	const nextSpeedIdRef = useRef(1);
 
 	const { shortcuts, isMac } = useShortcuts();
-	// Off-Mac doesn't have click telemetry, so force `onlyOnClicks` off for
-	// renderers while keeping the persisted value intact for round-tripping.
-	const effectiveCursorHighlight = useMemo(
-		() => (isMac ? cursorHighlight : { ...cursorHighlight, onlyOnClicks: false }),
-		[cursorHighlight, isMac],
-	);
 	const { locale, setLocale, t: rawT } = useI18n();
 	const t = useScopedT("editor");
 	const ts = useScopedT("settings");
@@ -1447,7 +1441,7 @@ export default function VideoEditor() {
 						previewHeight,
 						cursorTelemetry,
 						cursorClickTimestamps,
-						cursorHighlight: effectiveCursorHighlight,
+						cursorHighlight: cursorHighlight,
 						onProgress: (progress: ExportProgress) => {
 							setExportProgress(progress);
 						},
@@ -1589,7 +1583,7 @@ export default function VideoEditor() {
 						previewHeight,
 						cursorTelemetry,
 						cursorClickTimestamps,
-						cursorHighlight: effectiveCursorHighlight,
+						cursorHighlight: cursorHighlight,
 						onProgress: (progress: ExportProgress) => {
 							setExportProgress(progress);
 						},
@@ -1688,7 +1682,7 @@ export default function VideoEditor() {
 			handleExportSaved,
 			cursorTelemetry,
 			cursorClickTimestamps,
-			effectiveCursorHighlight,
+			cursorHighlight,
 			t,
 		],
 	);
@@ -1946,7 +1940,7 @@ export default function VideoEditor() {
 											onBlurDataChange={handleBlurDataPreviewChange}
 											onBlurDataCommit={commitState}
 											cursorTelemetry={cursorTelemetry}
-											cursorHighlight={effectiveCursorHighlight}
+											cursorHighlight={cursorHighlight}
 											cursorClickTimestamps={cursorClickTimestamps}
 										/>
 									</div>
@@ -2035,7 +2029,7 @@ export default function VideoEditor() {
 					<SettingsPanel
 						cursorHighlight={cursorHighlight}
 						onCursorHighlightChange={(next) => pushState({ cursorHighlight: next })}
-						cursorHighlightSupportsClicks={isMac}
+						cursorHighlightSupportsClicks={true}
 						selected={wallpaper}
 						onWallpaperChange={(w) => pushState({ wallpaper: w })}
 						selectedZoomDepth={
