@@ -157,8 +157,10 @@ interface SettingsPanelProps {
 	onCursorHighlightChange?: (
 		next: import("./videoPlayback/cursorHighlight").CursorHighlightConfig,
 	) => void;
-	// macOS only — gates the "Only on clicks" toggle (needs uiohook).
 	cursorHighlightSupportsClicks?: boolean;
+	showKeystrokes?: boolean;
+	onShowKeystrokesChange?: (show: boolean) => void;
+	hasKeystrokes?: boolean;
 	selected: string;
 	onWallpaperChange: (path: string) => void;
 	selectedZoomDepth?: ZoomDepth | null;
@@ -249,6 +251,9 @@ export function SettingsPanel({
 	cursorHighlight,
 	onCursorHighlightChange,
 	cursorHighlightSupportsClicks = false,
+	showKeystrokes = false,
+	onShowKeystrokesChange,
+	hasKeystrokes = false,
 	selected,
 	onWallpaperChange,
 	selectedZoomDepth,
@@ -1174,6 +1179,33 @@ export function SettingsPanel({
 											className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 										/>
 									</div>
+								</div>
+							)}
+
+							{onShowKeystrokesChange && (
+								<div className="flex items-center justify-between px-1 py-1.5 border-t border-white/5">
+									<div className="flex flex-col gap-0.5">
+										<div className="text-[11px] text-slate-300">Show keystrokes</div>
+										<div className="text-[9px] text-slate-500">
+											{hasKeystrokes
+												? "Overlay key presses on the recording"
+												: "No keystrokes captured in this recording"}
+										</div>
+									</div>
+									<button
+										type="button"
+										disabled={!hasKeystrokes}
+										onClick={() => onShowKeystrokesChange(!showKeystrokes)}
+										className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+											!hasKeystrokes
+												? "bg-white/5 border-white/5 text-slate-600 cursor-not-allowed"
+												: showKeystrokes
+													? "bg-[#34B27B]/20 border-[#34B27B]/50 text-[#34B27B]"
+													: "bg-white/5 border-white/10 text-slate-400"
+										}`}
+									>
+										{showKeystrokes ? "On" : "Off"}
+									</button>
 								</div>
 							)}
 

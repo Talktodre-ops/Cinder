@@ -30,6 +30,7 @@ import {
 	VideoExporter,
 } from "@/lib/exporter";
 import { computeFrameStepTime } from "@/lib/frameStep";
+import type { KeystrokeEvent } from "@/lib/keystrokeTelemetry";
 import type { ProjectMedia } from "@/lib/recordingSession";
 import { matchesShortcut } from "@/lib/shortcuts";
 import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
@@ -124,6 +125,8 @@ export default function VideoEditor() {
 	durationRef.current = duration;
 	const [cursorTelemetry, setCursorTelemetry] = useState<CursorTelemetryPoint[]>([]);
 	const [cursorClickTimestamps, setCursorClickTimestamps] = useState<number[]>([]);
+	const [keystrokes, setKeystrokes] = useState<KeystrokeEvent[]>([]);
+	const [showKeystrokes, setShowKeystrokes] = useState(false);
 	const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null);
 	const [selectedTrimId, setSelectedTrimId] = useState<string | null>(null);
 	const [selectedSpeedId, setSelectedSpeedId] = useState<string | null>(null);
@@ -593,6 +596,7 @@ export default function VideoEditor() {
 				if (mounted) {
 					setCursorTelemetry([]);
 					setCursorClickTimestamps([]);
+					setKeystrokes([]);
 				}
 				return;
 			}
@@ -602,12 +606,14 @@ export default function VideoEditor() {
 				if (mounted) {
 					setCursorTelemetry(result.success ? result.samples : []);
 					setCursorClickTimestamps(result.success ? (result.clicks ?? []) : []);
+					setKeystrokes(result.success ? (result.keys ?? []) : []);
 				}
 			} catch (telemetryError) {
 				console.warn("Unable to load cursor telemetry:", telemetryError);
 				if (mounted) {
 					setCursorTelemetry([]);
 					setCursorClickTimestamps([]);
+					setKeystrokes([]);
 				}
 			}
 		}
@@ -1442,6 +1448,8 @@ export default function VideoEditor() {
 						cursorTelemetry,
 						cursorClickTimestamps,
 						cursorHighlight: cursorHighlight,
+						keystrokes,
+						showKeystrokes,
 						onProgress: (progress: ExportProgress) => {
 							setExportProgress(progress);
 						},
@@ -1584,6 +1592,8 @@ export default function VideoEditor() {
 						cursorTelemetry,
 						cursorClickTimestamps,
 						cursorHighlight: cursorHighlight,
+						keystrokes,
+						showKeystrokes,
 						onProgress: (progress: ExportProgress) => {
 							setExportProgress(progress);
 						},
@@ -1683,6 +1693,8 @@ export default function VideoEditor() {
 			cursorTelemetry,
 			cursorClickTimestamps,
 			cursorHighlight,
+			keystrokes,
+			showKeystrokes,
 			t,
 		],
 	);
@@ -2030,6 +2042,9 @@ export default function VideoEditor() {
 						cursorHighlight={cursorHighlight}
 						onCursorHighlightChange={(next) => pushState({ cursorHighlight: next })}
 						cursorHighlightSupportsClicks={true}
+						showKeystrokes={showKeystrokes}
+						onShowKeystrokesChange={setShowKeystrokes}
+						hasKeystrokes={keystrokes.length > 0}
 						selected={wallpaper}
 						onWallpaperChange={(w) => pushState({ wallpaper: w })}
 						selectedZoomDepth={

@@ -60,6 +60,7 @@ import {
 	parseCssGradient,
 	resolveLinearGradientAngle,
 } from "./gradientParser";
+import { renderKeystrokeOverlay } from "./keystrokeOverlayRenderer";
 
 interface FrameRenderConfig {
 	width: number;
@@ -87,6 +88,8 @@ interface FrameRenderConfig {
 	cursorTelemetry?: import("@/components/video-editor/types").CursorTelemetryPoint[];
 	cursorHighlight?: CursorHighlightConfig;
 	cursorClickTimestamps?: number[];
+	keystrokes?: import("@/lib/keystrokeTelemetry").KeystrokeEvent[];
+	showKeystrokes?: boolean;
 	platform: string;
 }
 
@@ -433,6 +436,26 @@ export class FrameRenderer {
 					appliedScale * cursorScale,
 				);
 			}
+		}
+
+		// Keystroke overlay (rendered above cursor highlight, below annotations
+		// so text labels can still cover keystrokes if the user explicitly
+		// places one over the bottom-center area).
+		if (
+			this.config.showKeystrokes &&
+			this.config.keystrokes &&
+			this.config.keystrokes.length > 0 &&
+			this.compositeCtx
+		) {
+			const previewW = this.config.previewWidth ?? this.config.width;
+			const previewH = this.config.previewHeight ?? this.config.height;
+			const scaleFactor = (this.config.width / previewW + this.config.height / previewH) / 2;
+			renderKeystrokeOverlay(this.compositeCtx, this.config.keystrokes, {
+				canvasWidth: this.config.width,
+				canvasHeight: this.config.height,
+				scaleFactor,
+				currentTimeMs: timeMs,
+			});
 		}
 
 		// Render annotations on top if present

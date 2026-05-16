@@ -22,6 +22,11 @@ import {
 	createCursorTelemetryBuffer,
 } from "../../src/lib/cursorTelemetryBuffer";
 import {
+	isModifierKeycode,
+	type KeystrokeEvent,
+	labelForKeycode,
+} from "../../src/lib/keystrokeTelemetry";
+import {
 	normalizeProjectMedia,
 	normalizeRecordingSession,
 	type ProjectMedia,
@@ -287,7 +292,12 @@ async function storeRecordedSessionFiles(payload: StoreRecordedSessionInput) {
 	const telemetryPath = `${screenVideoPath}.cursor.json`;
 	const pendingBatch = cursorTelemetryBuffer.takeNextBatch();
 	const pendingClicks = takeCursorClickTimestamps();
-	if ((pendingBatch && pendingBatch.samples.length > 0) || pendingClicks.length > 0) {
+	const pendingKeys = takeKeystrokes();
+	if (
+		(pendingBatch && pendingBatch.samples.length > 0) ||
+		pendingClicks.length > 0 ||
+		pendingKeys.length > 0
+	) {
 		try {
 			await fs.writeFile(
 				telemetryPath,
@@ -296,6 +306,7 @@ async function storeRecordedSessionFiles(payload: StoreRecordedSessionInput) {
 						version: CURSOR_TELEMETRY_VERSION,
 						samples: pendingBatch?.samples ?? [],
 						clicks: pendingClicks,
+						keys: pendingKeys,
 					},
 					null,
 					2,
@@ -332,11 +343,18 @@ const cursorTelemetryBuffer = createCursorTelemetryBuffer({
 	maxActiveSamples: MAX_CURSOR_SAMPLES,
 });
 
-// Mouse click timestamps. uiohook-napi is cross-platform (Win/Linux/macOS).
-// On macOS the user must grant Accessibility permission for this to work; on
-// Windows/Linux it just works once the native module loads.
+// Mouse click + keystroke timestamps. uiohook-napi is cross-platform
+// (Win/Linux/macOS). On macOS the user must grant Accessibility permission
+// for this to work; on Windows/Linux it just works once the native module
+// loads.
 const MAX_CURSOR_CLICKS = 60 * 60 * 60; // ~1 click/sec for an hour
+const MAX_KEYSTROKES = 60 * 60 * 30; // ~30 keys/sec for an hour (overkill but cheap)
 let cursorClickTimestampsMs: number[] = [];
+let keystrokesBuffer: Array<{
+	timeMs: number;
+	label: string;
+	modifiers: { ctrl: boolean; alt: boolean; shift: boolean; meta: boolean };
+}> = [];
 let uioHookInstance: {
 	start: () => void;
 	stop: () => void;
@@ -345,6 +363,15 @@ let uioHookInstance: {
 	removeListener?: (...a: unknown[]) => void;
 } | null = null;
 let uioHookMouseDownHandler: ((event: { time?: number }) => void) | null = null;
+let uioHookKeyDownHandler:
+	| ((event: {
+			keycode: number;
+			ctrlKey?: boolean;
+			altKey?: boolean;
+			shiftKey?: boolean;
+			metaKey?: boolean;
+	  }) => void)
+	| null = null;
 let uioHookFailureLogged = false;
 
 function clamp(value: number, min: number, max: number) {
@@ -402,8 +429,26 @@ function startClickCapture() {
 		cursorClickTimestampsMs.push(elapsed);
 	};
 
+	uioHookKeyDownHandler = (event) => {
+		if (isModifierKeycode(event.keycode)) return;
+		const label = labelForKeycode(event.keycode);
+		if (!label) return;
+		if (keystrokesBuffer.length >= MAX_KEYSTROKES) return;
+		keystrokesBuffer.push({
+			timeMs: Math.max(0, Date.now() - cursorCaptureStartTimeMs),
+			label,
+			modifiers: {
+				ctrl: Boolean(event.ctrlKey),
+				alt: Boolean(event.altKey),
+				shift: Boolean(event.shiftKey),
+				meta: Boolean(event.metaKey),
+			},
+		});
+	};
+
 	try {
 		hook.on("mousedown", uioHookMouseDownHandler);
+		hook.on("keydown", uioHookKeyDownHandler);
 		hook.start();
 		uioHookInstance = hook;
 	} catch (error) {
@@ -412,30 +457,41 @@ function startClickCapture() {
 			console.warn("[clickCapture] failed to start uiohook:", error);
 		}
 		uioHookMouseDownHandler = null;
+		uioHookKeyDownHandler = null;
 	}
 }
 
 function stopClickCapture() {
 	if (!uioHookInstance) return;
 	try {
-		if (uioHookMouseDownHandler) {
+		const detach = (event: string, handler: ((...a: unknown[]) => void) | null) => {
+			if (!handler || !uioHookInstance) return;
 			if (typeof uioHookInstance.off === "function") {
-				uioHookInstance.off("mousedown", uioHookMouseDownHandler);
+				uioHookInstance.off(event, handler);
 			} else if (typeof uioHookInstance.removeListener === "function") {
-				uioHookInstance.removeListener("mousedown", uioHookMouseDownHandler);
+				uioHookInstance.removeListener(event, handler);
 			}
-		}
+		};
+		detach("mousedown", uioHookMouseDownHandler as never);
+		detach("keydown", uioHookKeyDownHandler as never);
 		uioHookInstance.stop();
 	} catch (error) {
 		console.warn("[clickCapture] failed to stop uiohook:", error);
 	}
 	uioHookInstance = null;
 	uioHookMouseDownHandler = null;
+	uioHookKeyDownHandler = null;
 }
 
 function takeCursorClickTimestamps(): number[] {
 	const out = cursorClickTimestampsMs;
 	cursorClickTimestampsMs = [];
+	return out;
+}
+
+function takeKeystrokes(): typeof keystrokesBuffer {
+	const out = keystrokesBuffer;
+	keystrokesBuffer = [];
 	return out;
 }
 
@@ -855,6 +911,7 @@ export function registerIpcHandlers(
 			cursorTelemetryBuffer.startSession(id);
 			cursorCaptureStartTimeMs = Date.now();
 			cursorClickTimestampsMs = [];
+			keystrokesBuffer = [];
 			startClickCapture();
 			sampleCursorPoint();
 			cursorCaptureInterval = setInterval(sampleCursorPoint, CURSOR_SAMPLE_INTERVAL_MS);
@@ -928,11 +985,31 @@ export function registerIpcHandlers(
 				.filter((v: number | null): v is number => v !== null)
 				.sort((a: number, b: number) => a - b);
 
-			return { success: true, samples, clicks };
+			const rawKeys = Array.isArray(parsed?.keys) ? parsed.keys : [];
+			const keys: KeystrokeEvent[] = rawKeys
+				.filter((k: unknown): k is Record<string, unknown> => Boolean(k && typeof k === "object"))
+				.map((k: Record<string, unknown>) => {
+					const mods = (k.modifiers as Record<string, unknown>) ?? {};
+					return {
+						timeMs:
+							typeof k.timeMs === "number" && Number.isFinite(k.timeMs) ? Math.max(0, k.timeMs) : 0,
+						label: typeof k.label === "string" ? k.label : "",
+						modifiers: {
+							ctrl: Boolean(mods.ctrl),
+							alt: Boolean(mods.alt),
+							shift: Boolean(mods.shift),
+							meta: Boolean(mods.meta),
+						},
+					};
+				})
+				.filter((k: KeystrokeEvent) => k.label.length > 0)
+				.sort((a: KeystrokeEvent, b: KeystrokeEvent) => a.timeMs - b.timeMs);
+
+			return { success: true, samples, clicks, keys };
 		} catch (error) {
 			const nodeError = error as NodeJS.ErrnoException;
 			if (nodeError.code === "ENOENT") {
-				return { success: true, samples: [], clicks: [] };
+				return { success: true, samples: [], clicks: [], keys: [] };
 			}
 			console.error("Failed to load cursor telemetry:", error);
 			return {
@@ -941,6 +1018,7 @@ export function registerIpcHandlers(
 				error: String(error),
 				samples: [],
 				clicks: [],
+				keys: [],
 			};
 		}
 	});

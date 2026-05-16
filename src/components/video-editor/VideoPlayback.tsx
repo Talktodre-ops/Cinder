@@ -122,6 +122,8 @@ interface VideoPlaybackProps {
 	cursorTelemetry?: import("./types").CursorTelemetryPoint[];
 	cursorHighlight?: CursorHighlightConfig;
 	cursorClickTimestamps?: number[];
+	keystrokes?: import("@/lib/keystrokeTelemetry").KeystrokeEvent[];
+	showKeystrokes?: boolean;
 }
 
 export interface VideoPlaybackRef {
@@ -182,6 +184,10 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			cursorTelemetry = [],
 			cursorHighlight = DEFAULT_CURSOR_HIGHLIGHT,
 			cursorClickTimestamps = [],
+			// Preview-side keystroke rendering not yet wired (export-only for v1).
+			// Props accepted so parent can pass through without TS errors.
+			keystrokes: _keystrokes = [],
+			showKeystrokes: _showKeystrokes = false,
 		},
 		ref,
 	) => {

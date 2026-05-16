@@ -62,6 +62,8 @@ export interface PipelineConfig {
 	cursorTelemetry?: import("@/components/video-editor/types").CursorTelemetryPoint[];
 	cursorHighlight?: import("@/components/video-editor/videoPlayback/cursorHighlight").CursorHighlightConfig;
 	cursorClickTimestamps?: number[];
+	keystrokes?: import("@/lib/keystrokeTelemetry").KeystrokeEvent[];
+	showKeystrokes?: boolean;
 	onProgress?: (progress: ExportProgress) => void;
 }
 
@@ -555,6 +557,8 @@ export class ExportPipeline {
 			cursorTelemetry: this.config.cursorTelemetry,
 			cursorHighlight: this.config.cursorHighlight,
 			cursorClickTimestamps: this.config.cursorClickTimestamps,
+			keystrokes: this.config.keystrokes,
+			showKeystrokes: this.config.showKeystrokes,
 			platform,
 		};
 	}

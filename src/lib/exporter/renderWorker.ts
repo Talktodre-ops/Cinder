@@ -77,6 +77,7 @@ import {
 	parseCssGradient,
 	resolveLinearGradientAngle,
 } from "./gradientParser";
+import { renderKeystrokeOverlay } from "./keystrokeOverlayRenderer";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -106,6 +107,8 @@ export interface WorkerRenderConfig {
 	cursorTelemetry?: import("@/components/video-editor/types").CursorTelemetryPoint[];
 	cursorHighlight?: CursorHighlightConfig;
 	cursorClickTimestamps?: number[];
+	keystrokes?: import("@/lib/keystrokeTelemetry").KeystrokeEvent[];
+	showKeystrokes?: boolean;
 	platform: string;
 }
 
@@ -791,6 +794,25 @@ async function renderFrame(
 			scaleFactor,
 		);
 	}
+
+	if (
+		!skip2D &&
+		config.showKeystrokes &&
+		config.keystrokes &&
+		config.keystrokes.length > 0 &&
+		compositeCtx
+	) {
+		const previewWidth = config.previewWidth ?? config.width;
+		const previewHeight = config.previewHeight ?? config.height;
+		const scaleFactor = (config.width / previewWidth + config.height / previewHeight) / 2;
+		renderKeystrokeOverlay(compositeCtx as unknown as CanvasRenderingContext2D, config.keystrokes, {
+			canvasWidth: config.width,
+			canvasHeight: config.height,
+			scaleFactor,
+			currentTimeMs: timeMs,
+		});
+	}
+
 	if (timing) {
 		timing.extras += performance.now() - stageStart;
 	}

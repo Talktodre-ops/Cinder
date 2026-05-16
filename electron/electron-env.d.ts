@@ -74,6 +74,7 @@ interface Window {
 			success: boolean;
 			samples: CursorTelemetryPoint[];
 			clicks: number[];
+			keys?: KeystrokeEvent[];
 			message?: string;
 			error?: string;
 		}>;
@@ -216,4 +217,15 @@ interface CursorTelemetryPoint {
 	timeMs: number;
 	cx: number;
 	cy: number;
+}
+
+interface KeystrokeEvent {
+	timeMs: number;
+	label: string;
+	modifiers: {
+		ctrl: boolean;
+		alt: boolean;
+		shift: boolean;
+		meta: boolean;
+	};
 }
