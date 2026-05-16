@@ -1,0 +1,32 @@
+# Normalize all text files to LF in the repo.
+# Windows checkouts keep LF in the working tree too (matches biome.json lineEnding: lf).
+* text=auto eol=lf
+
+# Explicit binaries — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.webm binary
+*.mp4 binary
+*.mp3 binary
+*.wav binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.7z binary
+*.dmg binary
+*.node binary
+
+# Shell scripts must stay LF regardless.
+*.sh text eol=lf
+
+# Windows-only files keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

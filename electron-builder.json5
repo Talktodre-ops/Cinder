@@ -1,0 +1,87 @@
+// @see - https://www.electron.build/configuration/configuration
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.andersonvictor.cinder",
+  "asar": true,
+  // .node binaries can't be dlopen'd from inside an asar — must live unpacked.
+  // ffmpeg-static binary is also a native executable that must be unpacked.
+  "asarUnpack": [
+    "node_modules/uiohook-napi/**/*",
+    "node_modules/ffmpeg-static/**/*",
+    "**/*.node"
+  ],
+  "productName": "Cinder",
+  "npmRebuild": true,
+  "buildDependenciesFromSource": true,
+  "compression": "normal",
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron",
+    "!*.png",
+    "!preview*.png",
+    "!*.md",
+    "!README.md",
+    "!CONTRIBUTING.md",
+    "!LICENSE"
+  ],
+  // Asset layout contract: "wallpapers/" under resourcesPath must align with
+  // assetBaseDir in electron/preload.ts (packaged branch).
+  "extraResources": [
+    {
+      "from": "public/wallpapers",
+      "to": "wallpapers"
+    },
+    // Optional: drop a custom ffmpeg build (e.g. Gyan.dev "full" Windows build
+    // with NVENC/QSV/AMF/x264) at resources/ffmpeg/<platform>/ffmpeg(.exe).
+    // electron/ffmpeg.ts will prefer this over node_modules/ffmpeg-static.
+    // The directory is optional — if it doesn't exist, ffmpeg-static is used.
+    {
+      "from": "resources/ffmpeg",
+      "to": "ffmpeg",
+      "filter": ["**/*"]
+    }
+  ],
+
+  "mac": {
+    "notarize": false,
+    "hardenedRuntime": true,
+    "entitlements": "macos.entitlements",
+    "entitlementsInherit": "macos.entitlements",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "icons/icons/mac/icon.icns",
+    "artifactName": "${productName}-Mac-${arch}-${version}-Installer.${ext}",
+    "extendInfo": {
+      "NSAudioCaptureUsageDescription": "Cinder needs audio capture permission to record system audio.",
+      "NSMicrophoneUsageDescription": "Cinder needs microphone access to record voice audio.",
+      "NSCameraUsageDescription": "Cinder needs camera access to record webcam video.",
+      "NSCameraUseContinuityCameraDeviceType": true,
+      "com.apple.security.device.audio-input": true
+    }
+  },
+  "linux": {
+    "target": [
+      "AppImage"
+    ],
+    "icon": "icons/icons/png",
+    "artifactName": "${productName}-Linux-${version}.${ext}",
+    "category": "AudioVideo"
+  },
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "icon": "icons/icons/win/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}

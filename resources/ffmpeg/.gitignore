@@ -1,0 +1,7 @@
+# Don't check ffmpeg binaries into git — they're large and platform-specific.
+# Keep the README and this gitignore.
+*
+!.gitignore
+!README.md
+!*/
+!*/.gitkeep
