@@ -17,6 +17,7 @@ import {
 	Container,
 	DOMAdapter,
 	Graphics,
+	Rectangle,
 	Sprite,
 	Texture,
 	WebWorkerAdapter,
@@ -1000,7 +1001,16 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 						// Fast path: gl.readPixels via Pixi extract — bypasses the 2D
 						// canvas roundtrip entirely. Returns a Uint8ClampedArray; we
 						// reinterpret the same buffer as Uint8Array to transfer it.
-						const out = app.renderer.extract.pixels(app.stage);
+						//
+						// `frame` clips extraction to the canvas dimensions. Without
+						// it, extract.pixels(stage) returns the stage's bounding box,
+						// which grows past cfg.height whenever a zoom region scales
+						// content past the canvas edges — producing oversized frames
+						// that ffmpeg rejects ("frame N has X bytes, expected Y").
+						const out = app.renderer.extract.pixels({
+							target: app.stage,
+							frame: new Rectangle(0, 0, config!.width, config!.height),
+						});
 						const pixels = out.pixels as Uint8ClampedArray;
 						rgba = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength);
 						outWidth = out.width;

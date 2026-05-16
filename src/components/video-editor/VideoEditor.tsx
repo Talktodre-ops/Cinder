@@ -135,6 +135,30 @@ export default function VideoEditor() {
 	const [isExporting, setIsExporting] = useState(false);
 	const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
 	const [exportError, setExportError] = useState<string | null>(null);
+
+	// rAF-throttled progress sink. Without this, the worker pool can fire ~30
+	// progress updates/sec from microtask continuations and Chromium will
+	// sometimes hold them until a real input event (mouse move) flushes the
+	// queue — manifesting as a "frozen" progress bar that only ticks on hover.
+	// Funneling through rAF gives smooth visual updates AND guarantees a real
+	// frame tick that React will commit immediately.
+	const pendingProgressRef = useRef<ExportProgress | null>(null);
+	const progressRafIdRef = useRef<number | null>(null);
+	const handleExportProgress = useCallback((progress: ExportProgress) => {
+		pendingProgressRef.current = progress;
+		if (progressRafIdRef.current !== null) return;
+		progressRafIdRef.current = requestAnimationFrame(() => {
+			progressRafIdRef.current = null;
+			const latest = pendingProgressRef.current;
+			if (latest) setExportProgress(latest);
+		});
+	}, []);
+	useEffect(
+		() => () => {
+			if (progressRafIdRef.current !== null) cancelAnimationFrame(progressRafIdRef.current);
+		},
+		[],
+	);
 	const [showExportDialog, setShowExportDialog] = useState(false);
 	const [showNewRecordingDialog, setShowNewRecordingDialog] = useState(false);
 	const [exportQuality, setExportQuality] = useState<ExportQuality>("good");
@@ -1450,9 +1474,7 @@ export default function VideoEditor() {
 						cursorHighlight: cursorHighlight,
 						keystrokes,
 						showKeystrokes,
-						onProgress: (progress: ExportProgress) => {
-							setExportProgress(progress);
-						},
+						onProgress: handleExportProgress,
 					});
 
 					exporterRef.current = gifExporter as unknown as VideoExporter;
@@ -1594,9 +1616,7 @@ export default function VideoEditor() {
 						cursorHighlight: cursorHighlight,
 						keystrokes,
 						showKeystrokes,
-						onProgress: (progress: ExportProgress) => {
-							setExportProgress(progress);
-						},
+						onProgress: handleExportProgress,
 					});
 
 					exporterRef.current = exporter;
