@@ -29,7 +29,6 @@
 		"test:browser": "vitest --config vitest.browser.config.ts --run",
 		"test:browser:install": "playwright install --with-deps chromium-headless-shell",
 		"test:e2e": "playwright test",
-		"prepare": "husky",
 		"rebuild:native": "node ./scripts/rebuild-native.mjs",
 		"postinstall": "npm run rebuild:native"
 	},
@@ -96,9 +95,7 @@
 		"electron-builder": "^26.8.1",
 		"esbuild": "^0.27.0",
 		"fast-check": "^4.7.0",
-		"husky": "^9.1.7",
 		"jsdom": "^29.0.2",
-		"lint-staged": "^16.4.0",
 		"png-to-ico": "^3.0.1",
 		"postcss": "^8.5.10",
 		"sharp": "^0.34.5",
@@ -110,8 +107,5 @@
 		"vite-plugin-electron-renderer": "^0.14.6",
 		"vitest": "^4.1.4"
 	},
-	"main": "dist-electron/main.js",
-	"lint-staged": {
-		"*.{ts,tsx,js,jsx,mts,cts,json}": "biome check --no-errors-on-unmatched"
-	}
+	"main": "dist-electron/main.js"
 }

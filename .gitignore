@@ -44,3 +44,6 @@ result
 result-*
 .direnv/
 release-artifacts/
+
+# Dev scratch / AI session notes — not for the public repo
+chat.md

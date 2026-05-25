@@ -2,7 +2,7 @@
 
 **A fast, hardware-accelerated screen recorder and editor for Windows (and beyond).**
 
-Cinder is a fork of [OpenScreen](https://github.com/openscreenapp/Openscreen) focused on
+Cinder is a fork of [OpenScreen](https://github.com/siddharthvaddem/openscreen) focused on
 making the export pipeline genuinely fast on real Windows laptops — by talking to your
 GPU's video encoder directly instead of going through a JavaScript-side encoder.
 
@@ -96,7 +96,6 @@ Things that aren't done yet, in rough order:
 
 - [ ] Code signing for Windows (signed installer = no SmartScreen warning)
 - [ ] Auto-update via `electron-updater` + GitHub Releases
-- [ ] **Auto-zoom**: heuristic + cursor-telemetry driven zoom suggestions
 - [ ] In-app **Performance** panel (encoder choice, worker count, GPU info)
 - [ ] Per-export performance summary card (`Exported in 1m 23s · 32 fps avg · NVENC`)
 - [ ] Pass-through fast path for unedited segments of long recordings
@@ -106,7 +105,7 @@ Things that aren't done yet, in rough order:
 
 ## Credits and license
 
-Cinder is based on [**OpenScreen**](https://github.com/openscreenapp/Openscreen) by
+Cinder is based on [**OpenScreen**](https://github.com/siddharthvaddem/openscreen) by
 **Siddharth Vaddem**, MIT licensed. Substantial additions by Anderson Victor, also MIT
 licensed. Both copyright notices are preserved in [LICENSE](./LICENSE) and an explicit
 attribution in [NOTICE.md](./NOTICE.md).
