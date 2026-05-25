@@ -1,6 +1,6 @@
 # NOTICE
 
-This project is **Cinder**, a fork of [OpenScreen](https://github.com/openscreenapp/Openscreen)
+This project is **Cinder**, a fork of [OpenScreen](https://github.com/siddharthvaddem/openscreen)
 by Siddharth Vaddem, originally released under the MIT License.
 
 Substantial modifications by Anderson Victor (2026), released under the same
