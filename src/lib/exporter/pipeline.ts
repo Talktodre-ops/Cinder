@@ -24,7 +24,7 @@ import type {
 	WebcamLayoutPreset,
 	WebcamSizePreset,
 } from "@/components/video-editor/types";
-import { BackgroundLoadError } from "@/lib/wallpaper";
+import { BackgroundLoadError, classifyWallpaper, resolveImageWallpaperUrl } from "@/lib/wallpaper";
 import { getPlatform } from "@/utils/platformUtils";
 import { AsyncVideoFrameQueue } from "./asyncVideoFrameQueue";
 import { FfmpegVideoEncoder, imageBitmapToRgbaBytes } from "./ffmpegVideoEncoder";
@@ -524,6 +524,22 @@ export class ExportPipeline {
 		}
 	}
 
+	/**
+	 * Resolve an image wallpaper to an absolute URL here on the renderer/main
+	 * thread, where window.electronAPI.assetBaseUrl is available. Export render
+	 * workers have no `window`, so resolving inside the worker produces a
+	 * root-relative "/wallpapers/…" path that 404s in the packaged (file://)
+	 * build — which is what broke "worker N init: failed to load background
+	 * image". Colors and gradients are passed through unchanged.
+	 */
+	private resolveWallpaperForWorkers(): string {
+		const wallpaper = this.config.wallpaper;
+		const classified = classifyWallpaper(wallpaper);
+		return classified.kind === "image"
+			? resolveImageWallpaperUrl(classified.path)
+			: wallpaper;
+	}
+
 	private buildWorkerRenderConfig(
 		videoWidth: number,
 		videoHeight: number,
@@ -534,7 +550,7 @@ export class ExportPipeline {
 		return {
 			width: this.config.width,
 			height: this.config.height,
-			wallpaper: this.config.wallpaper,
+			wallpaper: this.resolveWallpaperForWorkers(),
 			zoomRegions: this.config.zoomRegions,
 			showShadow: this.config.showShadow,
 			shadowIntensity: this.config.shadowIntensity,
