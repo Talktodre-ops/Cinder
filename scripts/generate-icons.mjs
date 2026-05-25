@@ -1,5 +1,9 @@
 /**
- * Generate all platform icons from public/cinder_logo.webp.
+ * Generate all platform icons from icons/cinder_logo.webp.
+ *
+ * The source is a flame photo on a solid black background, so we drop the
+ * background — using the flame's own brightness as an alpha mask — to produce
+ * transparent icons that read as a proper icon rather than a screenshot.
  *
  * Outputs:
  *   icons/icons/png/{16,24,32,48,64,128,256,512,1024}x{...}.png
@@ -21,7 +25,7 @@ import sharp from "sharp";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const SOURCE = join(ROOT, "public", "cinder_logo.webp");
+const SOURCE = join(ROOT, "icons", "cinder_logo.webp");
 const PNG_OUT_DIR = join(ROOT, "icons", "icons", "png");
 const ICO_OUT = join(ROOT, "icons", "icons", "win", "icon.ico");
 const TRAY_OUT = join(ROOT, "public", "cinder.png");
@@ -41,7 +45,19 @@ async function main() {
 
 	const left = Math.round(((meta.width ?? side) - side) / 2);
 	const top = Math.round(((meta.height ?? side) - side) / 2);
-	const square = sharp(SOURCE).extract({ left, top, width: side, height: side });
+	// Drop the solid black background: use the flame's red channel (lifted) as
+	// an alpha mask so the glow falloff survives but the black goes transparent.
+	// Every size is then resized from this transparent master.
+	const cropped = sharp(SOURCE).extract({ left, top, width: side, height: side });
+	const rgb = await cropped.clone().removeAlpha().raw().toBuffer({ resolveWithObject: true });
+	const alpha = await cropped.clone().extractChannel(0).linear(1.35, 0).raw().toBuffer();
+	const transparentSquare = await sharp(rgb.data, {
+		raw: { width: side, height: side, channels: rgb.info.channels },
+	})
+		.joinChannel(alpha, { raw: { width: side, height: side, channels: 1 } })
+		.png()
+		.toBuffer();
+	const square = sharp(transparentSquare);
 
 	await mkdir(PNG_OUT_DIR, { recursive: true });
 
