@@ -2,11 +2,10 @@
 
 **A fast, hardware-accelerated screen recorder and editor for Windows (and beyond).**
 
-Cinder is a fork of [OpenScreen](https://github.com/siddharthvaddem/openscreen) focused on
-making the export pipeline genuinely fast on real Windows laptops — by talking to your
+Cinder is a video recording and editing tool focused on making the export pipeline genuinely fast on real Windows laptops — by talking to your
 GPU's video encoder directly instead of going through a JavaScript-side encoder.
 
-> [!WARNING]
+> [Visit Cinder @cinder.talktodre.org]
 > Early days. The recording / editor UX inherits from upstream OpenScreen and is solid;
 > the export pipeline is new and where most of the work lives. Treat as a preview.
 
