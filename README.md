@@ -27,11 +27,12 @@
 
 <p align="center">
   <a href="https://cinder.talktodre.org">Website</a> •
+  <a href="https://talktodre.org/projects/cinder">Case Study</a> •
+  <a href="https://talktodre.org/blog/your-screen-recording-took-90-seconds-why-does-exporting-it-take-13-minutes">Blog Post</a> •
   <a href="#-key-features">Features</a> •
   <a href="#-tech-stack">Tech Stack</a> •
   <a href="#-performance-benchmarks">Performance</a> •
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-deep-dives--case-studies">Docs</a>
+  <a href="#-quick-start">Quick Start</a>
 </p>
 
 ---
@@ -128,8 +129,11 @@ The default `ffmpeg-static` works out-of-the-box. For total binary control, drop
 
 ## 📖 Deep Dives & Case Studies
 
-- 📄 **[Technical Case Study: From 6 FPS to 40 FPS](docs/from-6-to-40-fps.md)** — An in-depth breakdown of how we re-engineered the rendering & encoding pipeline.
+- 📰 **[Blog: Why Exporting a 90-Second Recording Took 13 Minutes](https://talktodre.org/blog/your-screen-recording-took-90-seconds-why-does-exporting-it-take-13-minutes)** — Deep dive into Electron software encoding bottlenecks vs GPU hardware acceleration.
+- 🌐 **[Project Case Study: Cinder](https://talktodre.org/projects/cinder)** — Live case study overview on talktodre.org.
+- 📄 **[Technical Deep Dive: From 6 FPS to 40 FPS](docs/from-6-to-40-fps.md)** — An in-depth breakdown of how we re-engineered the rendering & encoding pipeline.
 - 📐 **[Architecture Diagrams](docs/diagrams/)** — Visual flowcharts detailing the zero-copy pipeline and OffscreenCanvas worker pool design.
+
 
 ---
 
