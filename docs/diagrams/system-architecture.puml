@@ -1,0 +1,46 @@
+@startuml system-architecture
+' Cinder desktop app: whole-system architecture
+' Strict black & white. Render: plantuml -tsvg system-architecture.puml
+
+title Cinder Desktop App Architecture
+
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Helvetica
+skinparam ArrowColor black
+skinparam roundCorner 6
+
+package "Electron Renderer  (Chromium + React)" {
+  [Recorder\nscreen · webcam · cursor · keystrokes] as REC
+  [Video Editor\nPixiJS preview · zoom · crop · effects] as ED
+  [Export Pipeline\ndecode → render → encode] as EXP
+}
+
+package "Electron Main  (Node.js)" {
+  [Preload / IPC bridge] as IPC
+  [GPU selection\nforce discrete GPU] as GPU
+  [ffmpeg subprocess manager] as FMGR
+  [TCP loopback server] as TCP
+}
+
+package "Operating System" {
+  [Capture APIs\nscreen + audio] as CAP
+  [System ffmpeg\nNVENC · QSV · AMF · x264] as FF
+  [Discrete GPU] as DGPU
+}
+
+REC --> CAP : capture
+REC --> ED : recording + telemetry
+ED --> EXP : edit decisions
+EXP --> IPC : session control
+EXP --> TCP : raw RGBA frames
+IPC --> FMGR
+FMGR --> FF : spawn + control
+TCP --> FF : frame bytes
+GPU ..> DGPU : render + encode on
+FF ..> DGPU : hardware encode
+FF --> EXP : final .mp4
+
+@enduml

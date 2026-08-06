@@ -1,0 +1,39 @@
+@startuml export-dataflow
+' What we achieved: data flow of one frame, with the four wins annotated
+' Strict black & white. Render: plantuml -tsvg export-dataflow.puml
+
+title Export Data Flow  ·  ~6 fps → 40+ fps
+
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Helvetica
+skinparam ArrowColor black
+skinparam roundCorner 6
+left to right direction
+
+[Source recording\n.webm] as SRC
+[Editor state\nzoom · crop · effects] as CFG
+[StreamingDecoder] as DEC
+[Worker pool\nN PixiJS renderers] as WP
+[ffmpeg\nhardware encoder] as FF
+[Final video\n.mp4] as OUT
+
+SRC --> DEC : encoded H.264
+DEC --> WP : VideoFrame → ImageBitmap\n(transferable)
+CFG --> WP : per-frame transform
+WP --> FF : raw RGBA\n(TCP, zero-copy)
+FF --> OUT : H.264 + audio, muxed
+
+note bottom of OUT
+  Four changes closed the gap:
+  (1) render N frames in parallel across workers
+  (2) read pixels via gl.readPixels, not a 2D canvas
+  (3) encode on the GPU (NVENC / QSV / AMF), not in JS
+  (4) stream frames over a TCP socket, no per-frame IPC
+  ----
+  Result:  ~6 fps  →  40+ fps      (13 min  →  ~1 min for a 90 s clip)
+end note
+
+@enduml

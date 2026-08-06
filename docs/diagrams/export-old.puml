@@ -1,0 +1,32 @@
+@startuml export-old
+' The problem: upstream export path, single-threaded, software encode (~6 fps)
+' Strict black & white. Render: plantuml -tsvg export-old.puml
+
+title Old Export Path  ·  ~6 fps
+
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ArrowColor black
+
+|Renderer main thread|
+start
+:Decode one frame;
+:PixiJS render\n(one frame at a time);
+:Draw to 2D canvas;
+:getImageData\nGPU → CPU readback;
+:ipcRenderer.invoke\n(one IPC round-trip per frame);
+|Main process|
+:WebCodecs software encoder\nH.264 High · latency = quality;
+:JS muxer (mp4-muxer);
+:.mp4;
+note right
+  One CPU core does the render.
+  The encoder silently falls back
+  to software. Every frame pays a
+  full IPC round-trip.
+end note
+stop
+
+@enduml

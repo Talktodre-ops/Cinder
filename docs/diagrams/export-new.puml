@@ -1,0 +1,55 @@
+@startuml export-new
+' The solution: staged pipeline, parallel workers, TCP transport, HW encode (40+ fps)
+' Strict black & white. Render: plantuml -tsvg export-new.puml
+
+title New Export Pipeline  ·  40+ fps
+
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Helvetica
+skinparam ArrowColor black
+skinparam roundCorner 6
+
+[StreamingDecoder] as DEC
+queue "bounded queue" as Q1
+
+package "Worker pool  (N × OffscreenCanvas + PixiJS)" {
+  [Worker 1] as W1
+  [Worker 2] as W2
+  [Worker N] as WN
+}
+
+queue "in-flight FIFO\n(cap = 2N)" as Q2
+[Encoder sink] as ENC
+[ffmpeg subprocess\nNVENC · QSV · AMF · x264] as FF
+[Audio\nffmpeg filter graph\natrim · atempo · concat] as AUD
+[Mux] as MUX
+[final .mp4] as OUT
+
+DEC --> Q1 : frames (backpressured)
+Q1 --> W1
+Q1 --> W2
+Q1 --> WN
+W1 --> Q2 : RGBA
+W2 --> Q2 : RGBA
+WN --> Q2 : RGBA
+Q2 --> ENC : in submission order
+ENC ..> FF : TCP loopback\nzero-copy, no per-frame IPC
+FF --> MUX : temp.mp4 (video)
+AUD --> MUX : audio track
+MUX --> OUT
+
+note bottom of AUD
+  extracted in parallel
+  with the video encode
+end note
+
+note bottom of Q1
+  every stage is
+  bounded: producers
+  wait when full
+end note
+
+@enduml

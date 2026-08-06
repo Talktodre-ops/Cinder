@@ -73,8 +73,8 @@ Requires Node 20+ and a Windows machine with NVIDIA, Intel, or AMD graphics. (Ma
 Linux work too — encoders are auto-detected per platform.)
 
 ```powershell
-git clone https://github.com/<your-account>/cinder.git
-cd cinder
+git clone https://github.com/Talktodre-ops/Cinder.git
+cd Cinder
 npm install
 npm run dev          # development with hot reload + auto-opened DevTools
 npm run build:win    # production .exe installer (needs Windows Developer Mode)
